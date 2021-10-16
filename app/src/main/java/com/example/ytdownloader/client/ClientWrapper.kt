@@ -1,4 +1,4 @@
-package client
+package com.example.ytdownloader.client
 
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
@@ -31,6 +31,9 @@ class ClientWrapper(url: String) {
     }
 
     val apiClient = HttpClient(CIO) {
+        install(JsonFeature) {
+            serializer = KotlinxSerializer()
+        }
         install(Auth) {
             bearer {
                 loadTokens { refreshToken() }

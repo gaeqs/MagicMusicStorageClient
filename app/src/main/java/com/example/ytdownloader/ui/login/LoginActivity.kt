@@ -13,7 +13,6 @@ import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.widget.EditText
 import android.widget.Toast
-import client.ClientWrapper
 import com.example.ytdownloader.MainActivity
 import com.example.ytdownloader.databinding.ActivityLoginBinding
 
