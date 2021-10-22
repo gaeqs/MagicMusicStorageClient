@@ -30,7 +30,7 @@ suspend inline fun <reified T : String?> ClientWrapper.apiTest(
     }
 }
 
-suspend inline fun <reified T : String?> ClientWrapper.getSongs(
+suspend inline fun <reified T : List<Song>?> ClientWrapper.getSongs(
     section: String,
     onResponseException: (ClientRequestException) -> T = { ex -> throw ex }
 ): T {

@@ -31,7 +31,7 @@ fun main() {
         client.logout(clearLoginInfo = false)
 
         // Reconnects again because the login info was not cleared.
-        println(client.getSongs("patata"))
+        println(client.getSongs("test section"))
 
         // Now logouts clearing the login info.
         client.logout(clearLoginInfo = true)
