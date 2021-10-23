@@ -1,11 +1,12 @@
 package com.example.ytdownloader.client
 
 import io.ktor.client.features.*
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import java.io.File
 
 fun main() {
-    val client = ClientWrapper("localhost:25555")
+    val client = ClientWrapper("localhost", 25555)
 
     runBlocking {
         println(client.apiTest { "ERROR!" })
@@ -13,6 +14,10 @@ fun main() {
         client.loginInfo = LoginUser("jetbrains", "foobar")
 
         println(client.apiTest())
+
+        val task = launch {
+            client.statusSocket()
+        }
 
         println(client.postSection<Any>("test section") { it })
         println(client.postAlbum<Any>("test album", File("F:/a.png")) { it })

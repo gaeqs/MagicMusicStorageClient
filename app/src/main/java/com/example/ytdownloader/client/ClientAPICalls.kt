@@ -1,10 +1,13 @@
 package com.example.ytdownloader.client
 
 import io.ktor.client.features.*
+import io.ktor.client.features.websocket.*
 import io.ktor.client.request.*
 import io.ktor.client.request.forms.*
 import io.ktor.http.*
+import io.ktor.http.cio.websocket.*
 import io.ktor.utils.io.core.*
+import kotlinx.coroutines.channels.ClosedReceiveChannelException
 import kotlinx.serialization.Serializable
 import java.io.File
 
@@ -24,7 +27,7 @@ suspend inline fun <reified T : String?> ClientWrapper.apiTest(
     onResponseException: (ClientRequestException) -> T = { ex -> throw ex }
 ): T {
     return try {
-        apiClient.get(fullUrl + "api")
+        apiClient.get(host = host, port = port, path = "/api")
     } catch (ex: ClientRequestException) {
         onResponseException(ex)
     }
@@ -35,7 +38,7 @@ suspend inline fun <reified T : List<Song>?> ClientWrapper.getSongs(
     onResponseException: (ClientRequestException) -> T = { ex -> throw ex }
 ): T {
     return try {
-        apiClient.get(fullUrl + "api/get/songs") {
+        apiClient.get(host = host, port = port, path = "/api/get/songs") {
             parameter("section", section)
         }
     } catch (ex: ClientRequestException) {
@@ -57,7 +60,7 @@ suspend inline fun <reified T> ClientWrapper.postAlbum(
 
     return try {
         apiClient.submitFormWithBinaryData(formData = albumData) {
-            url(fullUrl + "api/post/album")
+            path("/api/post/album")
         }
     } catch (ex: ClientRequestException) {
         onResponseException(ex)
@@ -69,7 +72,7 @@ suspend inline fun <reified T> ClientWrapper.postSection(
     onResponseException: (ClientRequestException) -> T = { ex -> throw ex }
 ): T {
     return try {
-        apiClient.post(fullUrl + "api/post/section") {
+        apiClient.post(host = host, port = port, path = "/api/post/section") {
             contentType(ContentType.Application.Json)
             body = SectionWrapper(section)
         }
@@ -83,11 +86,24 @@ suspend inline fun <reified T> ClientWrapper.postRequest(
     onResponseException: (ClientRequestException) -> T = { ex -> throw ex }
 ): T {
     return try {
-        apiClient.post(fullUrl + "api/post/request") {
+        apiClient.post(host = host, port = port, path = "/api/post/request") {
             contentType(ContentType.Application.Json)
             body = request
         }
     } catch (ex: ClientRequestException) {
         onResponseException(ex)
+    }
+}
+
+suspend fun ClientWrapper.statusSocket() {
+    apiClient.webSocket(host = host, port = port, path = "/api/socket/status") {
+        try {
+            for (frame in incoming) {
+
+            }
+        } catch (e: ClosedReceiveChannelException) {
+        } catch (e: Throwable) {
+            e.printStackTrace()
+        }
     }
 }
