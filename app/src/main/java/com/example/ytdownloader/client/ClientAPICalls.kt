@@ -23,6 +23,20 @@ data class DownloadRequest(
     val section: String
 )
 
+enum class SongDownloadStatus {
+
+    QUEUED,
+    FETCHING,
+    DOWNLOADING,
+    CONVERTING,
+    NORMALIZING,
+    ENHANCING,
+    FINISHED,
+    ERROR,
+    CANCELLED
+
+}
+
 suspend inline fun <reified T : String?> ClientWrapper.apiTest(
     onResponseException: (ClientRequestException) -> T = { ex -> throw ex }
 ): T {
@@ -92,18 +106,5 @@ suspend inline fun <reified T> ClientWrapper.postRequest(
         }
     } catch (ex: ClientRequestException) {
         onResponseException(ex)
-    }
-}
-
-suspend fun ClientWrapper.statusSocket() {
-    apiClient.webSocket(host = host, port = port, path = "/api/socket/status") {
-        try {
-            for (frame in incoming) {
-
-            }
-        } catch (e: ClosedReceiveChannelException) {
-        } catch (e: Throwable) {
-            e.printStackTrace()
-        }
     }
 }

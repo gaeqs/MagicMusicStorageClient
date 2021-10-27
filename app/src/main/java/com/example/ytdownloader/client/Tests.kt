@@ -1,6 +1,8 @@
 package com.example.ytdownloader.client
 
 import io.ktor.client.features.*
+import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import java.io.File
@@ -15,9 +17,8 @@ fun main() {
 
         println(client.apiTest())
 
-        val task = launch {
-            client.statusSocket()
-        }
+        val informer = DownloadTaskStatusInformer(client)
+        informer.listeners += { status -> println(status) }
 
         println(client.postSection<Any>("test section") { it })
         println(client.postAlbum<Any>("test album", File("F:/a.png")) { it })
@@ -47,5 +48,7 @@ fun main() {
         } catch (ex: ClientRequestException) {
             println(ex.response)
         }
+
+        informer.join()
     }
 }
