@@ -1,13 +1,10 @@
 package com.example.ytdownloader.client
 
 import io.ktor.client.features.*
-import io.ktor.client.features.websocket.*
 import io.ktor.client.request.*
 import io.ktor.client.request.forms.*
 import io.ktor.http.*
-import io.ktor.http.cio.websocket.*
 import io.ktor.utils.io.core.*
-import kotlinx.coroutines.channels.ClosedReceiveChannelException
 import kotlinx.serialization.Serializable
 import java.io.File
 
@@ -59,6 +56,40 @@ suspend inline fun <reified T : List<Song>?> ClientWrapper.getSongs(
         onResponseException(ex)
     }
 }
+
+suspend inline fun <reified T : List<String>?> ClientWrapper.getSections(
+    onResponseException: (ClientRequestException) -> T = { ex -> throw ex }
+): T {
+    return try {
+        apiClient.get(host = host, port = port, path = "/api/get/sections")
+    } catch (ex: ClientRequestException) {
+        onResponseException(ex)
+    }
+}
+
+suspend inline fun <reified T : List<String>?> ClientWrapper.getAlbums(
+    onResponseException: (ClientRequestException) -> T = { ex -> throw ex }
+): T {
+    return try {
+        apiClient.get(host = host, port = port, path = "/api/get/albums")
+    } catch (ex: ClientRequestException) {
+        onResponseException(ex)
+    }
+}
+
+suspend inline fun ClientWrapper.getAlbumImage(
+    album: String,
+    onResponseException: (ClientRequestException) -> ByteArray? = { ex -> throw ex }
+): ByteArray? {
+    return try {
+        apiClient.get(host = host, port = port, path = "/api/get/albumCover") {
+            parameter("album", album)
+        }
+    } catch (ex: ClientRequestException) {
+        onResponseException(ex)
+    }
+}
+
 
 suspend inline fun <reified T> ClientWrapper.postAlbum(
     album: String,

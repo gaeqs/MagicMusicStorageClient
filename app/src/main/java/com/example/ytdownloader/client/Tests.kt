@@ -16,12 +16,15 @@ fun main() {
         client.loginInfo = LoginUser("jetbrains", "foobar")
 
         println(client.apiTest())
+        println(client.getSections())
+        println(client.getAlbums())
+        println(client.getAlbumImage("test album")?.size)
 
         val informer = DownloadTaskStatusInformer(client)
         informer.listeners += { status -> println(status) }
 
         println(client.postSection<Any>("test section") { it })
-        println(client.postAlbum<Any>("test album", File("F:/a.png")) { it })
+        println(client.postAlbum<Any>("test album", File("""C:\Users\gaelr\Desktop\grovyle 2.png""")) { it })
 
         println(client.postRequest<Any>(
             DownloadRequest(
