@@ -1,5 +1,6 @@
 package com.example.ytdownloader.compose
 
+import android.widget.Toast
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -11,12 +12,16 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.ytdownloader.client.ClientInstance
 import com.example.ytdownloader.client.DownloadRequest
 import com.example.ytdownloader.client.postRequest
+import io.ktor.client.features.*
+import io.ktor.client.statement.*
+import io.ktor.http.*
 import kotlinx.coroutines.launch
 
 @Composable
@@ -25,12 +30,12 @@ fun MainScaffold(nav: NavController) {
         topBar = { TopAppBar(title = { Text(text = "Download") }) },
         bottomBar = { MainNav(nav) }
     ) {
-        Main()
+        Main(nav)
     }
 }
 
 @Composable
-fun Main() {
+fun Main(nav: NavController) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -47,10 +52,12 @@ fun Main() {
         )
 
         val scope = rememberCoroutineScope()
+        val context = LocalContext.current
 
         var youtubeLink by rememberSaveable { mutableStateOf("") }
         var name by rememberSaveable { mutableStateOf("") }
         var artist by rememberSaveable { mutableStateOf("") }
+        var errorMessage by rememberSaveable { mutableStateOf("") }
 
         var section by rememberSaveable {
             mutableStateOf(ClientInstance.sections.firstOrNull() ?: "")
@@ -115,13 +122,31 @@ fun Main() {
             onClick = {
                 val request = DownloadRequest(youtubeLink, name, artist, album, section)
                 youtubeLink = ""
+                errorMessage = ""
 
                 scope.launch {
-                    ClientInstance.client!!.postRequest(request)
+                    ClientInstance.client!!.postRequest(request) {
+                        if (it is ClientRequestException) {
+                            when (it.response.status) {
+                                HttpStatusCode.Unauthorized -> nav.navigate("login")
+                                else -> errorMessage = it.response.readText()
+                            }
+                        } else {
+                            it.printStackTrace()
+                            Toast.makeText(context, it.message, Toast.LENGTH_SHORT).show()
+                            nav.navigate("login")
+                        }
+                    }
                 }
             }
         ) {
             Text(text = "Download")
         }
+
+        Text(
+            text = errorMessage,
+            color = MaterialTheme.colors.error
+        )
+
     }
 }

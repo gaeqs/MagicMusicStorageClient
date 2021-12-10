@@ -1,5 +1,6 @@
 package com.example.ytdownloader.compose
 
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -9,6 +10,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.ytdownloader.client.ClientInstance
@@ -24,20 +26,26 @@ fun SectionsScaffold(nav: NavController) {
         topBar = { TopAppBar(title = { Text(text = "Sections") }) },
         bottomBar = { MainNav(nav) }
     ) {
-        SectionsList()
+        SectionsList(nav)
     }
 }
 
 @Composable
-fun SectionsList() {
+fun SectionsList(nav: NavController) {
     val state = rememberSwipeRefreshState(false)
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
     SwipeRefresh(
         state = state,
         onRefresh = {
             scope.launch {
                 state.isRefreshing = true
-                ClientInstance.refreshSectionsAndSongs()
+                try {
+                    ClientInstance.refreshSectionsAndSongs()
+                } catch (ex: Exception) {
+                    Toast.makeText(context, ex.message, Toast.LENGTH_SHORT).show()
+                    nav.navigate("login")
+                }
                 state.isRefreshing = false
             }
         }) {

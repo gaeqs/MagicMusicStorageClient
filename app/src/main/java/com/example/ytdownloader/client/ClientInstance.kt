@@ -10,20 +10,21 @@ import androidx.compose.ui.graphics.asImageBitmap
 import io.ktor.client.features.*
 import io.ktor.client.statement.*
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 object ClientInstance {
 
     var client: ClientWrapper? = null
+    var status: DownloadTaskStatusInformer? = null
 
     var sections by mutableStateOf(listOf<String>())
         private set
 
     var albums by mutableStateOf(listOf<String>())
-
     var songs by mutableStateOf(mapOf<String, List<Song>>())
-
     var images by mutableStateOf(mapOf<String, MutableState<ImageBitmap?>>())
+    var requests by mutableStateOf(mapOf<DownloadRequest, TaskStatus>())
 
     suspend fun tryConnect(
         user: String,
@@ -41,6 +42,9 @@ object ClientInstance {
             return Pair(false, it.localizedMessage ?: "Unknown error")
         }
         this.client = client
+        this.status = DownloadTaskStatusInformer(client).apply {
+            listeners.add(this@ClientInstance::statusListener)
+        }
         refreshSectionsAndSongs()
         refreshAlbums()
         return Pair(true, "Ok")
@@ -48,10 +52,17 @@ object ClientInstance {
 
     fun disconnect() {
         client?.let {
+            status?.stop()
             it.apiClient.close()
             it.close()
+
             sections = emptyList()
+            albums = emptyList()
+            songs = emptyMap()
+            //images = emptyMap() we don't clear the images to save mobile data!
+            requests = emptyMap()
         }
+        client = null
     }
 
     suspend fun refreshSections() {
@@ -72,13 +83,17 @@ object ClientInstance {
     }
 
     fun isConnected(): Boolean {
-        return client != null
+        val c = client ?: return false
+        if (!c.apiClient.isActive) {
+            client = null
+            return false
+        }
+        return true
     }
 
     fun getOrLoadImage(album: String, loadScope: CoroutineScope): MutableState<ImageBitmap?> {
-        val state: MutableState<ImageBitmap?>
         images[album]?.let { return it }
-        state = mutableStateOf(null)
+        val state = mutableStateOf<ImageBitmap?>(null)
         images = images + Pair(album, state)
 
         loadScope.launch {
@@ -90,6 +105,18 @@ object ClientInstance {
         }
 
         return state
+    }
+
+    fun checkStatusInformer() {
+        val s = status
+        val c = client
+        if (c != null && (s == null || !s.running)) {
+            status = DownloadTaskStatusInformer(c)
+        }
+    }
+
+    private fun statusListener(status: TaskStatus) {
+        requests = requests + Pair(status.request, status)
     }
 
 }

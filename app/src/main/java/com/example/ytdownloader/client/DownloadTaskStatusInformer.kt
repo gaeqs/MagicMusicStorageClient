@@ -3,11 +3,8 @@ package com.example.ytdownloader.client
 import io.ktor.client.features.websocket.*
 import io.ktor.http.cio.websocket.*
 import io.ktor.util.collections.*
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
+import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.ClosedReceiveChannelException
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.Serializable
@@ -18,19 +15,21 @@ import kotlinx.serialization.json.Json
 data class TaskStatus(
     val request: DownloadRequest = DownloadRequest("", "", "", "", ""),
     val status: SongDownloadStatus = SongDownloadStatus.ERROR,
-    val percentage : Double
+    val percentage: Double
 )
 
 class DownloadTaskStatusInformer(private val client: ClientWrapper) {
 
-    private lateinit var session: DefaultClientWebSocketSession
+    private var session: DefaultClientWebSocketSession? = null
 
     private val initMutex = Mutex()
     private var requestOnInit = false
 
     val listeners = ConcurrentList<suspend (TaskStatus) -> Unit>()
 
-    private val job: Job = CoroutineScope(Dispatchers.Default).launch {
+    val running get() = session != null
+
+    private val job: Job = CoroutineScope(Dispatchers.Main).launch {
         client.apiClient.webSocket(
             host = client.host,
             port = client.port,
@@ -38,7 +37,7 @@ class DownloadTaskStatusInformer(private val client: ClientWrapper) {
         ) {
             initMutex.withLock {
                 if (requestOnInit) {
-                    session.send("all")
+                    send("all")
                 }
                 session = this
             }
@@ -49,16 +48,21 @@ class DownloadTaskStatusInformer(private val client: ClientWrapper) {
                     }
                 }
             } catch (e: ClosedReceiveChannelException) {
+            } catch (e: CancellationException) {
+                close(CloseReason(CloseReason.Codes.NORMAL, "Client stop"))
             } catch (e: Throwable) {
                 e.printStackTrace()
+            } finally {
+                session = null
             }
         }
     }
 
     suspend fun requestAll() {
         initMutex.withLock {
-            if (this::session.isInitialized) {
-                session.send("all")
+            val ses = session
+            if (ses != null) {
+                ses.send("all")
             } else {
                 requestOnInit = true
             }
