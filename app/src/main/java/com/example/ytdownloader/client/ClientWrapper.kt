@@ -19,7 +19,7 @@ data class LoginUser(val username: String, val password: String)
 data class TokenInfo(val token: String)
 
 @Serializable
-data class Song(val name: String, var artist: String, val album: String)
+data class Song(val name: String, val album: String, var artist: String = "")
 
 class ClientWrapper(val host: String, val port: Int) {
 
@@ -62,5 +62,10 @@ class ClientWrapper(val host: String, val port: Int) {
 
     fun HttpRequestBuilder.path(path: String) {
         url(host = this@ClientWrapper.host, port = this@ClientWrapper.port, path = path)
+    }
+
+    fun close() {
+        apiClient.close()
+        tokenClient.close()
     }
 }

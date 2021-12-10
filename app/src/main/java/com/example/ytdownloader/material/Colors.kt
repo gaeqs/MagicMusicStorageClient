@@ -13,7 +13,7 @@ val LIGHT_COLORS = lightColors(
     primaryVariant = Color(161, 17, 17),
     secondary = Color(0xFFF44336),
     secondaryVariant = Color(170, 46, 37),
-    error = Color(255, 0, 0)
+    error = Color(255, 0, 0),
 )
 
 val DARK_COLORS = darkColors(
