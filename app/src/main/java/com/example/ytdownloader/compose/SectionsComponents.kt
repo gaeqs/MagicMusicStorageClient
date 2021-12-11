@@ -11,6 +11,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.toLowerCase
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.ytdownloader.client.ClientInstance
@@ -53,9 +54,9 @@ fun SectionsList(nav: NavController) {
             verticalArrangement = Arrangement.spacedBy(4.dp),
             modifier = Modifier
                 .fillMaxSize()
-                .padding(8.dp, 8.dp)
+                .padding(8.dp, 8.dp, 8.dp, 64.dp)
         ) {
-            items(ClientInstance.sections) { name ->
+            items(ClientInstance.sections.sortedBy { it.lowercase() }) { name ->
                 Section(name = name)
             }
         }
@@ -82,7 +83,11 @@ fun Section(name: String) {
             width = 1.0f,
             rowScope = {
                 if (image != null) {
-                    Image(bitmap = image!!, contentDescription = name)
+                    Image(
+                        modifier = Modifier.padding(top = 4.dp, end = 16.dp),
+                        bitmap = image!!,
+                        contentDescription = name
+                    )
                 }
                 Text(text = name, style = MaterialTheme.typography.h4)
             }) {
@@ -114,7 +119,11 @@ fun Song(song: Song, scope: CoroutineScope) {
                     .fillMaxWidth()
             ) {
                 if (image != null) {
-                    Image(bitmap = image!!, contentDescription = song.name)
+                    Image(
+                        modifier = Modifier.padding(end = 16.dp),
+                        bitmap = image!!,
+                        contentDescription = song.name
+                    )
                 }
                 Text(text = song.name, style = MaterialTheme.typography.h5)
             }

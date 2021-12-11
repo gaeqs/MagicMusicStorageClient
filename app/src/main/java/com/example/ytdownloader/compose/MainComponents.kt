@@ -1,11 +1,9 @@
 package com.example.ytdownloader.compose
 
 import android.widget.Toast
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.ScrollState
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
 import androidx.compose.runtime.*
@@ -54,6 +52,11 @@ fun Main(nav: NavController) {
         val scope = rememberCoroutineScope()
         val context = LocalContext.current
 
+        var showNewSectionDialog by remember { mutableStateOf(false) }
+        var showNewAlbumDialog by remember { mutableStateOf(false) }
+        var sectionDropdownExpanded by remember { mutableStateOf(false) }
+        var albumDropdownExpanded by remember { mutableStateOf(false) }
+
         var youtubeLink by rememberSaveable { mutableStateOf("") }
         var name by rememberSaveable { mutableStateOf("") }
         var artist by rememberSaveable { mutableStateOf("") }
@@ -97,19 +100,65 @@ fun Main(nav: NavController) {
         )
 
         DropDownMenu(
+            expanded = sectionDropdownExpanded,
             title = "Section",
             modifier = Modifier.fillMaxWidth(0.8f),
             elements = ClientInstance.sections,
-            selectedElement = section
-        ) { section = it }
-
+            selectedElement = section,
+            onExpand = { sectionDropdownExpanded = it },
+            onSelectElement = { section = it }
+        ) {
+            DropdownMenuItem(onClick = {
+                showNewSectionDialog = true
+                sectionDropdownExpanded = false
+            }) {
+                Text(text = "New...")
+            }
+        }
 
         DropDownMenu(
+            expanded = albumDropdownExpanded,
             title = "Album",
             modifier = Modifier.fillMaxWidth(0.8f),
             elements = ClientInstance.albums,
-            selectedElement = album
-        ) { album = it }
+            selectedElement = album,
+            onExpand = { albumDropdownExpanded = it },
+            onSelectElement = { album = it },
+            itemBuilder = {
+                val image by remember { ClientInstance.getOrLoadImage(it, scope) }
+
+                Text(text = it)
+
+                Spacer(Modifier.weight(1.0f))
+
+                image?.let { i ->
+                    Image(
+                        modifier = Modifier.height(40.dp),
+                        bitmap = i,
+                        contentDescription = it
+                    )
+                }
+            }
+        ) {
+            DropdownMenuItem(onClick = {
+                showNewAlbumDialog = true
+                albumDropdownExpanded = false
+            }) {
+                Text(text = "New...")
+            }
+        }
+
+        CreateSectionDialog(
+            show = showNewSectionDialog,
+            scope = scope,
+            nav = nav
+        ) { showNewSectionDialog = false }
+
+        CreateAlbumDialog(
+            show = showNewAlbumDialog,
+            scope = scope,
+            nav = nav
+        ) { showNewAlbumDialog = false }
 
         Button(
             modifier = Modifier
@@ -120,7 +169,8 @@ fun Main(nav: NavController) {
                     && section in ClientInstance.sections
                     && album in ClientInstance.albums,
             onClick = {
-                val request = DownloadRequest(youtubeLink, name, artist, album, section)
+                val request =
+                    DownloadRequest(youtubeLink.trim(), name.trim(), artist.trim(), album, section)
                 youtubeLink = ""
                 errorMessage = ""
 

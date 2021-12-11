@@ -1,14 +1,18 @@
 package com.example.ytdownloader.client
 
+import android.content.Context
+import android.net.Uri
 import io.ktor.client.request.*
 import io.ktor.client.request.forms.*
 import io.ktor.http.*
 import io.ktor.utils.io.core.*
 import kotlinx.serialization.Serializable
-import java.io.File
 
 @Serializable
 data class SectionWrapper(val name: String)
+
+@Serializable
+data class CancelRequestWrapper(val name: String, val section: String)
 
 @Serializable
 data class DownloadRequest(
@@ -19,17 +23,25 @@ data class DownloadRequest(
     val section: String
 )
 
-enum class SongDownloadStatus {
+enum class SongDownloadStatus(val type: SongDownloadStatusType) {
 
-    QUEUED,
-    FETCHING,
-    DOWNLOADING,
-    CONVERTING,
-    NORMALIZING,
-    ENHANCING,
-    FINISHED,
-    ERROR,
-    CANCELLED
+    QUEUED(SongDownloadStatusType.INDEFINITE),
+    FETCHING(SongDownloadStatusType.INDEFINITE),
+    DOWNLOADING(SongDownloadStatusType.PERCENTAGE),
+    CONVERTING(SongDownloadStatusType.PERCENTAGE),
+    NORMALIZING(SongDownloadStatusType.PERCENTAGE),
+    ENHANCING(SongDownloadStatusType.INDEFINITE),
+    FINISHED(SongDownloadStatusType.END),
+    ERROR(SongDownloadStatusType.END),
+    CANCELLED(SongDownloadStatusType.END);
+
+}
+
+enum class SongDownloadStatusType {
+
+    PERCENTAGE,
+    INDEFINITE,
+    END
 
 }
 
@@ -102,14 +114,18 @@ suspend inline fun ClientWrapper.getAlbumImage(
 
 
 suspend inline fun <reified T> ClientWrapper.postAlbum(
+    context: Context,
     album: String,
-    image: File,
+    image: Uri,
     onResponseException: (Exception) -> T = { ex -> throw ex }
 ): T {
+    val input = context.contentResolver.openInputStream(image)
+        ?: return onResponseException(IllegalArgumentException("Input is null"))
+
     val albumData = formData {
         append("header", """{"name":"$album"}""")
         append("image", "a", ContentType.Image.PNG) {
-            writeFully(image.inputStream().readBytes())
+            writeFully(input.readBytes().also { input.close() })
         }
     }
 
@@ -144,6 +160,21 @@ suspend inline fun <reified T> ClientWrapper.postRequest(
         apiClient.post(host = host, port = port, path = "/api/post/request") {
             contentType(ContentType.Application.Json)
             body = request
+        }
+    } catch (ex: Exception) {
+        onResponseException(ex)
+    }
+}
+
+suspend inline fun <reified T> ClientWrapper.cancelRequest(
+    name: String,
+    section: String,
+    onResponseException: (Exception) -> T = { ex -> throw ex }
+): T {
+    return try {
+        apiClient.post(host = host, port = port, path = "/api/post/cancelRequest") {
+            contentType(ContentType.Application.Json)
+            body = CancelRequestWrapper(name, section)
         }
     } catch (ex: Exception) {
         onResponseException(ex)

@@ -47,6 +47,14 @@ object ClientInstance {
         }
         refreshSectionsAndSongs()
         refreshAlbums()
+
+        val request =
+            DownloadRequest("www.url.com", "Test name", "Test artist", "test album", "Test section")
+
+        val status = TaskStatus(request, SongDownloadStatus.DOWNLOADING, 0.5)
+
+        requests = mapOf(request to status)
+
         return Pair(true, "Ok")
     }
 
@@ -94,7 +102,7 @@ object ClientInstance {
     fun getOrLoadImage(album: String, loadScope: CoroutineScope): MutableState<ImageBitmap?> {
         images[album]?.let { return it }
         val state = mutableStateOf<ImageBitmap?>(null)
-        images = images + Pair(album, state)
+        images = images + (album to state)
 
         loadScope.launch {
             val array = client!!.getAlbumImage(album) ?: return@launch
@@ -116,7 +124,7 @@ object ClientInstance {
     }
 
     private fun statusListener(status: TaskStatus) {
-        requests = requests + Pair(status.request, status)
+        requests = requests + (status.request to status)
     }
 
 }

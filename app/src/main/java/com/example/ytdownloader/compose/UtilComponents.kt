@@ -128,13 +128,16 @@ fun MainNav(nav: NavController) {
 
 @Composable
 fun DropDownMenu(
+    expanded: Boolean,
     title: String,
-    modifier : Modifier = Modifier,
     elements: List<String>,
+    modifier: Modifier = Modifier,
     selectedElement: String = elements.firstOrNull() ?: "",
-    onSelectElement: (String) -> Unit = {}
+    onExpand: (Boolean) -> Unit = {},
+    onSelectElement: (String) -> Unit = {},
+    itemBuilder: @Composable RowScope.(String) -> Unit = { Text(text = it) },
+    extraItems: @Composable ColumnScope.() -> Unit = {}
 ) {
-    var expanded by remember { mutableStateOf(false) }
     var textFieldSize by remember { mutableStateOf(Size.Zero) }
     val icon = if (expanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown
 
@@ -151,23 +154,25 @@ fun DropDownMenu(
             label = { Text(title) },
             trailingIcon = {
                 Icon(icon, "contentDescription",
-                    Modifier.clickable { expanded = !expanded })
+                    Modifier.clickable { onExpand(!expanded) })
             },
             readOnly = true
         )
         DropdownMenu(
             expanded = expanded,
-            onDismissRequest = { expanded = false },
+            onDismissRequest = { onExpand(false) },
             modifier = Modifier.width(with(LocalDensity.current) { textFieldSize.width.toDp() })
         ) {
             elements.forEach { label ->
-                DropdownMenuItem(onClick = {
+                DropdownMenuItem(
+                    onClick = {
                     onSelectElement(label)
-                    expanded = false
+                    onExpand(false)
                 }) {
-                    Text(text = label)
+                    itemBuilder(label)
                 }
             }
+            extraItems()
         }
     }
 }

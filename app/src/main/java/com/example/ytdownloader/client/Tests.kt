@@ -24,7 +24,6 @@ fun main() {
         informer.listeners += { status -> println(status) }
 
         println(client.postSection<Any>("test section") { it })
-        println(client.postAlbum<Any>("test album", File("""C:\Users\gaelr\Desktop\grovyle 2.png""")) { it })
 
         println(client.postRequest<Any>(
             DownloadRequest(
