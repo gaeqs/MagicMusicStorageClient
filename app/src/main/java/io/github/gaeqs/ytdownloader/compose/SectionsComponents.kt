@@ -1,11 +1,17 @@
 package io.github.gaeqs.ytdownloader.compose
 
+import android.net.Uri
 import android.widget.Toast
+import androidx.activity.compose.ManagedActivityResultLauncher
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Sync
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -13,11 +19,17 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import io.github.gaeqs.ytdownloader.client.ClientInstance
-import io.github.gaeqs.ytdownloader.client.Song
+import androidx.work.Data
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
 import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
+import io.github.gaeqs.ytdownloader.client.ClientInstance
+import io.github.gaeqs.ytdownloader.client.Song
+import io.github.gaeqs.ytdownloader.work.SyncWorker
 import kotlinx.coroutines.launch
+
+private var selectedSection: String = ""
 
 @Composable
 fun SectionsScaffold(nav: NavController) {
@@ -34,6 +46,19 @@ fun SectionsList(nav: NavController) {
     val state = rememberSwipeRefreshState(false)
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
+
+    val folderLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocumentTree()
+    ) { uri ->
+        println("DOWN")
+        val request = OneTimeWorkRequestBuilder<SyncWorker>()
+        val dataBuilder = Data.Builder()
+        dataBuilder.putString("folder", uri.toString())
+        dataBuilder.putString("section", selectedSection)
+        request.setInputData(dataBuilder.build())
+        WorkManager.getInstance(context).enqueue(request.build())
+    }
+
     SwipeRefresh(
         state = state,
         onRefresh = {
@@ -55,14 +80,14 @@ fun SectionsList(nav: NavController) {
                 .padding(8.dp, 8.dp, 8.dp, 64.dp)
         ) {
             items(ClientInstance.sections.sortedBy { it.lowercase() }) { name ->
-                Section(name = name)
+                Section(name = name, folderLauncher = folderLauncher)
             }
         }
     }
 }
 
 @Composable
-fun Section(name: String) {
+fun Section(name: String, folderLauncher: ManagedActivityResultLauncher<Uri?, Uri?>) {
     val context = LocalContext.current
     val image by remember {
         val song = ClientInstance.songs[name]?.firstOrNull()
@@ -88,6 +113,14 @@ fun Section(name: String) {
                     )
                 }
                 Text(text = name, style = MaterialTheme.typography.h4)
+
+                IconButton(onClick = {
+                    selectedSection = name
+                    folderLauncher.launch(null)
+                }) {
+                    Icon(imageVector = Icons.Filled.Sync, contentDescription = "Sync")
+                }
+
             }) {
             Column(
                 modifier = Modifier.fillMaxWidth(),

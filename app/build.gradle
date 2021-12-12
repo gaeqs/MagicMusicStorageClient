@@ -78,4 +78,7 @@ dependencies {
 
     implementation "com.google.accompanist:accompanist-swiperefresh:0.21.4-beta"
 
+    implementation "androidx.work:work-runtime-ktx:$work_version"
+    implementation "androidx.work:work-multiprocess:$work_version"
+    implementation "androidx.work:work-gcm:$work_version"
 }

@@ -51,20 +51,12 @@ object ClientInstance {
         refreshSectionsAndSongs()
         refreshAlbums()
 
-        val request =
-            DownloadRequest("www.url.com", "Test name", "Test artist", "test album", "Test section")
-
-        val status = TaskStatus(request, SongDownloadStatus.DOWNLOADING, 0.5)
-
-        requests = mapOf(request to status)
-
         return Pair(true, "Ok")
     }
 
     fun disconnect() {
         client?.let {
             status?.stop()
-            it.apiClient.close()
             it.close()
 
             sections = emptyList()

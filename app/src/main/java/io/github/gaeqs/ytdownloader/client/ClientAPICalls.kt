@@ -12,7 +12,7 @@ import kotlinx.serialization.Serializable
 data class SectionWrapper(val name: String)
 
 @Serializable
-data class CancelRequestWrapper(val name: String, val section: String)
+data class CancelRequestWrapper(val name: String, val section: String, val album: String)
 
 @Serializable
 data class DownloadRequest(
@@ -112,6 +112,22 @@ suspend inline fun ClientWrapper.getAlbumImage(
     }
 }
 
+suspend inline fun ClientWrapper.getSong(
+    section: String,
+    name: String,
+    album: String,
+    onResponseException: (Exception) -> ByteArray? = { ex -> throw ex }
+): ByteArray? {
+    return try {
+        apiClient.get(host = host, port = port, path = "/api/get/song") {
+            parameter("section", section)
+            parameter("name", name)
+            parameter("album", album)
+        }
+    } catch (ex: Exception) {
+        onResponseException(ex)
+    }
+}
 
 suspend inline fun <reified T> ClientWrapper.postAlbum(
     context: Context,
@@ -169,12 +185,13 @@ suspend inline fun <reified T> ClientWrapper.postRequest(
 suspend inline fun <reified T> ClientWrapper.cancelRequest(
     name: String,
     section: String,
+    album: String,
     onResponseException: (Exception) -> T = { ex -> throw ex }
 ): T {
     return try {
         apiClient.post(host = host, port = port, path = "/api/post/cancelRequest") {
             contentType(ContentType.Application.Json)
-            body = CancelRequestWrapper(name, section)
+            body = CancelRequestWrapper(name, section, album)
         }
     } catch (ex: Exception) {
         onResponseException(ex)

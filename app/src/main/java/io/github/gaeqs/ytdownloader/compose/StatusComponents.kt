@@ -126,7 +126,11 @@ fun Status(status: TaskStatus, scope: CoroutineScope, nav: NavController) {
 }
 
 private suspend fun cancelRequest(status: TaskStatus, nav: NavController, context: Context) {
-    ClientInstance.client!!.cancelRequest(status.request.name, status.request.section) {
+    ClientInstance.client!!.cancelRequest(
+        status.request.name,
+        status.request.section,
+        status.request.album
+    ) {
         if (it is ClientRequestException) {
             when (it.response.status) {
                 HttpStatusCode.Unauthorized -> nav.navigate("login")
