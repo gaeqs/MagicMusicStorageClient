@@ -104,7 +104,7 @@ fun Main(nav: NavController) {
             expanded = sectionDropdownExpanded,
             title = "Section",
             modifier = Modifier.fillMaxWidth(0.8f),
-            elements = ClientInstance.sections,
+            elements = ClientInstance.sections.sortedBy { it },
             selectedElement = section,
             onExpand = { sectionDropdownExpanded = it },
             onSelectElement = { section = it }
@@ -121,7 +121,7 @@ fun Main(nav: NavController) {
             expanded = albumDropdownExpanded,
             title = "Album",
             modifier = Modifier.fillMaxWidth(0.8f),
-            elements = ClientInstance.albums,
+            elements = ClientInstance.albums.sortedBy { it },
             selectedElement = album,
             onExpand = { albumDropdownExpanded = it },
             onSelectElement = { album = it },
