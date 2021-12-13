@@ -133,6 +133,11 @@ object ClientInstance {
 
     private fun statusListener(status: TaskStatus) {
         requests = requests + (status.request to status)
+        if (status.status == SongDownloadStatus.FINISHED) {
+            uiScope.launch {
+                refreshSectionsAndSongs()
+            }
+        }
     }
 
 }

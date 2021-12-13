@@ -14,6 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -61,55 +62,32 @@ fun Status(status: TaskStatus, scope: CoroutineScope, nav: NavController) {
             .height(128.dp)
     ) {
         Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
         )
         {
             if (image != null) {
                 Image(
-                    modifier = Modifier.padding(end = 16.dp),
+                    modifier = Modifier
+                        .padding(end = 16.dp)
+                        .weight(0.3f),
                     bitmap = image!!,
                     contentDescription = status.request.name
                 )
             }
             Column(
+                modifier = Modifier.weight(0.5f),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(
-                        text = status.request.name,
-                        style = MaterialTheme.typography.h4
-                    )
-
-                    if (status.status.type != SongDownloadStatusType.END) {
-                        IconButton(onClick = {
-                            scope.launch { cancelRequest(status, nav, context) }
-                        }) {
-                            Icon(
-                                imageVector = Icons.Filled.Cancel,
-                                contentDescription = "Cancel"
-                            )
-                        }
-                    } else if (
-                        status.status == SongDownloadStatus.CANCELLED
-                        || status.status == SongDownloadStatus.ERROR
-                    ) {
-                        IconButton(onClick = {
-                            scope.launch { restartRequest(status, nav, context) }
-                        }) {
-                            Icon(
-                                imageVector = Icons.Filled.Autorenew,
-                                contentDescription = "Restart"
-                            )
-                        }
-                    }
-                }
+                Text(
+                    text = "${status.request.album} - ${status.request.name}",
+                    style = MaterialTheme.typography.h5
+                )
 
                 Text(
                     text = status.status.name,
-                    style = MaterialTheme.typography.h5
+                    style = MaterialTheme.typography.h6
                 )
 
                 when (status.status.type) {
@@ -119,8 +97,38 @@ fun Status(status: TaskStatus, scope: CoroutineScope, nav: NavController) {
                         LinearProgressIndicator(status.percentage.toFloat())
                     SongDownloadStatusType.END -> {}
                 }
-
             }
+
+
+            if (status.status.type != SongDownloadStatusType.END) {
+                IconButton(
+                    modifier = Modifier.weight(0.2f),
+                    onClick = {
+                        scope.launch { cancelRequest(status, nav, context) }
+                    }) {
+                    Icon(
+                        imageVector = Icons.Filled.Cancel,
+                        contentDescription = "Cancel"
+                    )
+                }
+            } else if (
+                status.status == SongDownloadStatus.CANCELLED
+                || status.status == SongDownloadStatus.ERROR
+            ) {
+                IconButton(
+                    modifier = Modifier.weight(0.2f),
+                    onClick = {
+                        scope.launch { restartRequest(status, nav, context) }
+                    }) {
+                    Icon(
+                        imageVector = Icons.Filled.Autorenew,
+                        contentDescription = "Restart"
+                    )
+                }
+            } else {
+                Spacer(modifier = Modifier.weight(0.2f))
+            }
+
         }
     }
 }

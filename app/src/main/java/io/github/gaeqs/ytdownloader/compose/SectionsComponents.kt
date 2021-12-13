@@ -16,7 +16,6 @@ import androidx.compose.material.icons.filled.Sync
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
@@ -67,6 +66,7 @@ fun SectionsList(nav: NavController) {
                 state.isRefreshing = true
                 try {
                     ClientInstance.refreshSectionsAndSongs()
+                    ClientInstance.refreshAlbums()
                 } catch (ex: Exception) {
                     Toast.makeText(context, ex.message, Toast.LENGTH_SHORT).show()
                     nav.navigate("login")
@@ -94,13 +94,11 @@ fun Section(
     scope: CoroutineScope
 ) {
     val context = LocalContext.current
-    val image by remember {
-        val song = ClientInstance.songs[name]?.firstOrNull()
-        if (song == null) {
-            mutableStateOf<ImageBitmap?>(null)
-        } else {
-            ClientInstance.getOrLoadImage(song.album, context)
-        }
+    val song = ClientInstance.songs[name]?.firstOrNull()
+    val image = if (song == null) {
+        null
+    } else {
+        ClientInstance.getOrLoadImage(song.album, context).value
     }
     var deleting by remember { mutableStateOf(false) }
 
@@ -116,14 +114,14 @@ fun Section(
                         modifier = Modifier
                             .padding(top = 4.dp, end = 16.dp)
                             .weight(0.3f),
-                        bitmap = image!!,
+                        bitmap = image,
                         contentDescription = name
                     )
                 } else {
                     Spacer(modifier = Modifier.weight(0.3f))
                 }
                 Text(
-                    modifier = Modifier.weight(0.5f),
+                    modifier = Modifier.weight(0.525f),
                     text = name,
                     style = MaterialTheme.typography.h4
                 )
@@ -131,7 +129,7 @@ fun Section(
 
                 Column(
                     modifier = Modifier
-                        .weight(0.2f)
+                        .weight(0.175f)
                         .padding(end = 8.dp),
                     verticalArrangement = Arrangement.SpaceBetween
                 ) {
@@ -203,7 +201,9 @@ fun Song(section: String, song: Song, scope: CoroutineScope) {
             ) {
                 if (image != null) {
                     Image(
-                        modifier = Modifier.padding(end = 16.dp).weight(0.3f),
+                        modifier = Modifier
+                            .padding(top = 4.dp, end = 16.dp, bottom = 4.dp)
+                            .weight(0.3f),
                         bitmap = image!!,
                         contentDescription = song.name
                     )
@@ -219,8 +219,8 @@ fun Song(section: String, song: Song, scope: CoroutineScope) {
                 IconButton(
                     modifier = Modifier.weight(0.2f),
                     onClick = {
-                    deleting = true
-                }) {
+                        deleting = true
+                    }) {
                     Icon(imageVector = Icons.Filled.Delete, contentDescription = "Delete")
                 }
             }

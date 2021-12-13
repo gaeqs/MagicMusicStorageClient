@@ -65,6 +65,7 @@ fun AlbumsList(nav: NavController) {
                 state.isRefreshing = true
                 try {
                     ClientInstance.refreshAlbums()
+                    ClientInstance.refreshSectionsAndSongs()
                 } catch (ex: Exception) {
                     Toast.makeText(context, ex.message, Toast.LENGTH_SHORT).show()
                     nav.navigate("login")
@@ -115,14 +116,14 @@ fun Album(
                 }
 
                 Text(
-                    modifier = Modifier.weight(0.5f),
+                    modifier = Modifier.weight(0.525f),
                     text = name,
                     style = MaterialTheme.typography.h4
                 )
 
 
                 Column(
-                    modifier = Modifier.weight(0.2f),
+                    modifier = Modifier.weight(0.175f),
                     verticalArrangement = Arrangement.SpaceBetween
                 ) {
                     IconButton(onClick = {
