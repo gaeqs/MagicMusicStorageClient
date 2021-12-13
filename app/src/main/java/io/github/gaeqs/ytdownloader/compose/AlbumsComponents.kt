@@ -25,6 +25,7 @@ import androidx.work.workDataOf
 import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 import io.github.gaeqs.ytdownloader.client.ClientInstance
+import io.github.gaeqs.ytdownloader.client.ImageCache
 import io.github.gaeqs.ytdownloader.client.deleteAlbum
 import io.github.gaeqs.ytdownloader.client.deleteSection
 import io.github.gaeqs.ytdownloader.work.SyncWorker
@@ -93,7 +94,7 @@ fun Album(
     scope: CoroutineScope
 ) {
     val context = LocalContext.current
-    val image by remember { ClientInstance.getOrLoadImage(name, context) }
+    val image by remember { ImageCache.getOrLoadImage(name, context) }
     var deleting by remember { mutableStateOf(false) }
 
     Card {

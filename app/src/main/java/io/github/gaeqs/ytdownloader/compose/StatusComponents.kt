@@ -55,7 +55,7 @@ fun StatusList(nav: NavController) {
 @Composable
 fun Status(status: TaskStatus, scope: CoroutineScope, nav: NavController) {
     val context = LocalContext.current;
-    val image by remember { ClientInstance.getOrLoadImage(status.request.album, context) }
+    val image by remember { ImageCache.getOrLoadImage(status.request.album, context) }
     Card(
         modifier = Modifier
             .fillMaxWidth()

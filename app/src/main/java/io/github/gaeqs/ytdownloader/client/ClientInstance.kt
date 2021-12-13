@@ -1,23 +1,16 @@
 package io.github.gaeqs.ytdownloader.client
 
-import android.content.Context
-import android.graphics.BitmapFactory
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.asImageBitmap
-import io.github.gaeqs.ytdownloader.util.createAlbumImageFile
-import io.github.gaeqs.ytdownloader.util.getImageFile
 import io.ktor.client.features.*
 import io.ktor.client.statement.*
 import kotlinx.coroutines.*
 
 object ClientInstance {
 
-    private val ioScope = CoroutineScope(Dispatchers.IO)
-    private val uiScope = CoroutineScope(Dispatchers.Main)
+    val ioScope = CoroutineScope(Dispatchers.IO)
+    val uiScope = CoroutineScope(Dispatchers.Main)
 
     var client: ClientWrapper? = null
     var status: DownloadTaskStatusInformer? = null
@@ -27,7 +20,6 @@ object ClientInstance {
 
     var albums by mutableStateOf(listOf<String>())
     var songs by mutableStateOf(mapOf<String, List<Song>>())
-    var images by mutableStateOf(mapOf<String, MutableState<ImageBitmap?>>())
     var requests by mutableStateOf(mapOf<DownloadRequest, TaskStatus>())
 
     suspend fun tryConnect(
@@ -93,34 +85,6 @@ object ClientInstance {
             return false
         }
         return true
-    }
-
-    fun getOrLoadImage(
-        album: String,
-        context: Context
-    ): MutableState<ImageBitmap?> {
-        images[album]?.let { return it }
-        val state = mutableStateOf<ImageBitmap?>(null)
-        images = images + (album to state)
-
-        ioScope.launch {
-            val imageFromFile = context.getImageFile(album)
-            if (imageFromFile != null) {
-                uiScope.launch { state.value = imageFromFile }
-                return@launch
-            }
-
-            val array = client!!.getAlbumImage(album) ?: return@launch
-            val bitmap = BitmapFactory.decodeByteArray(array, 0, array.size)
-                ?: return@launch
-            val image = bitmap.asImageBitmap()
-
-            context.createAlbumImageFile(album, image)
-
-            uiScope.launch { state.value = imageFromFile }
-        }
-
-        return state
     }
 
     fun checkStatusInformer() {

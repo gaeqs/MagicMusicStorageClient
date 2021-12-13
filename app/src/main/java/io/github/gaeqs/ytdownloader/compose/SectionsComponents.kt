@@ -24,10 +24,7 @@ import androidx.work.WorkManager
 import androidx.work.workDataOf
 import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
-import io.github.gaeqs.ytdownloader.client.ClientInstance
-import io.github.gaeqs.ytdownloader.client.Song
-import io.github.gaeqs.ytdownloader.client.deleteSection
-import io.github.gaeqs.ytdownloader.client.deleteSong
+import io.github.gaeqs.ytdownloader.client.*
 import io.github.gaeqs.ytdownloader.work.SyncWorker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -98,7 +95,7 @@ fun Section(
     val image = if (song == null) {
         null
     } else {
-        ClientInstance.getOrLoadImage(song.album, context).value
+        ImageCache.getOrLoadImage(song.album, context).value
     }
     var deleting by remember { mutableStateOf(false) }
 
@@ -186,7 +183,7 @@ fun Section(
 @Composable
 fun Song(section: String, song: Song, scope: CoroutineScope) {
     val context = LocalContext.current
-    val image by remember { ClientInstance.getOrLoadImage(song.album, context) }
+    val image by remember { ImageCache.getOrLoadImage(song.album, context) }
     var deleting by remember { mutableStateOf(false) }
 
     Surface {

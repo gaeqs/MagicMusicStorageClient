@@ -38,15 +38,6 @@ class MainActivity : AppCompatActivity() {
 
         createNotificationChannel()
 
-        val manager = WorkManager.getInstance(this)
-        val liveData = manager.getWorkInfosByTagLiveData("sync")
-        liveData.observe(this) {
-            println("LIST")
-            println(it.size)
-            println(it)
-            println("AAAAAAAAAAA")
-        }
-
         setContent {
             nav = rememberNavController()
             MaterialTheme(

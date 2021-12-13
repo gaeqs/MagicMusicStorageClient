@@ -129,6 +129,23 @@ suspend inline fun ClientWrapper.getSong(
     }
 }
 
+suspend inline fun <reified T : Long?> ClientWrapper.getAlbumCoverModificationDate(
+    album: String,
+    onResponseException: (Exception) -> T = { ex -> throw ex }
+): T {
+    return try {
+        val string: String? = apiClient.get(
+            host = host, port = port,
+            path = "/api/get/albumCoverModificationDate"
+        ) {
+            parameter("album", album)
+        }
+        string?.toLongOrNull() as T
+    } catch (ex: Exception) {
+        onResponseException(ex)
+    }
+}
+
 suspend inline fun <reified T> ClientWrapper.postAlbum(
     context: Context,
     album: String,

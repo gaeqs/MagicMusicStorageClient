@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import io.github.gaeqs.ytdownloader.client.ClientInstance
 import io.github.gaeqs.ytdownloader.client.DownloadRequest
+import io.github.gaeqs.ytdownloader.client.ImageCache
 import io.github.gaeqs.ytdownloader.client.postRequest
 import io.ktor.client.features.*
 import io.ktor.client.statement.*
@@ -125,7 +126,7 @@ fun Main(nav: NavController) {
             onExpand = { albumDropdownExpanded = it },
             onSelectElement = { album = it },
             itemBuilder = {
-                val image by remember { ClientInstance.getOrLoadImage(it, context) }
+                val image by remember { ImageCache.getOrLoadImage(it, context) }
 
                 Text(text = it)
 

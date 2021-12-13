@@ -13,7 +13,18 @@ import androidx.compose.ui.graphics.asImageBitmap
 import java.io.File
 
 
-fun Context.getImageFile(album: String): ImageBitmap? {
+fun Context.getAlbumImageFile(album: String): File? {
+    val directory = getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+    val albumsDirectory = File(directory, "albums")
+    if (!albumsDirectory.exists()) return null
+
+    val albumFile = File(albumsDirectory, "$album.png")
+    if (!albumFile.exists()) return null
+    return albumFile
+}
+
+
+fun Context.getImageForAlbum(album: String): ImageBitmap? {
     val directory = getExternalFilesDir(Environment.DIRECTORY_PICTURES)
     val albumsDirectory = File(directory, "albums")
     if (!albumsDirectory.exists()) return null
