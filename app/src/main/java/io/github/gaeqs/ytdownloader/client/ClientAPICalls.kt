@@ -197,3 +197,33 @@ suspend inline fun <reified T> ClientWrapper.cancelRequest(
         onResponseException(ex)
     }
 }
+
+suspend inline fun <reified T> ClientWrapper.deleteSong(
+    name: String,
+    section: String,
+    album: String,
+    onResponseException: (Exception) -> T = { ex -> throw ex }
+): T {
+    return try {
+        apiClient.post(host = host, port = port, path = "/api/post/deleteSong") {
+            contentType(ContentType.Application.Json)
+            body = CancelRequestWrapper(name, section, album)
+        }
+    } catch (ex: Exception) {
+        onResponseException(ex)
+    }
+}
+
+suspend inline fun <reified T> ClientWrapper.deleteSection(
+    section: String,
+    onResponseException: (Exception) -> T = { ex -> throw ex }
+): T {
+    return try {
+        apiClient.post(host = host, port = port, path = "/api/post/deleteSection") {
+            contentType(ContentType.Application.Json)
+            body = SectionWrapper(section)
+        }
+    } catch (ex: Exception) {
+        onResponseException(ex)
+    }
+}

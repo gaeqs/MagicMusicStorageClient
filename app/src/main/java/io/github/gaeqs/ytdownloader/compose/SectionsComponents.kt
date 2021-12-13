@@ -11,6 +11,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -26,7 +27,10 @@ import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 import io.github.gaeqs.ytdownloader.client.ClientInstance
 import io.github.gaeqs.ytdownloader.client.Song
+import io.github.gaeqs.ytdownloader.client.deleteSection
+import io.github.gaeqs.ytdownloader.client.deleteSong
 import io.github.gaeqs.ytdownloader.work.SyncWorker
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 private var selectedSection: String = ""
@@ -77,14 +81,18 @@ fun SectionsList(nav: NavController) {
                 .padding(8.dp, 8.dp, 8.dp, 64.dp)
         ) {
             items(ClientInstance.sections.sortedBy { it.lowercase() }) { name ->
-                Section(name = name, folderLauncher = folderLauncher)
+                Section(name = name, folderLauncher = folderLauncher, scope = scope)
             }
         }
     }
 }
 
 @Composable
-fun Section(name: String, folderLauncher: ManagedActivityResultLauncher<Uri?, Uri?>) {
+fun Section(
+    name: String,
+    folderLauncher: ManagedActivityResultLauncher<Uri?, Uri?>,
+    scope: CoroutineScope
+) {
     val context = LocalContext.current
     val image by remember {
         val song = ClientInstance.songs[name]?.firstOrNull()
@@ -94,6 +102,7 @@ fun Section(name: String, folderLauncher: ManagedActivityResultLauncher<Uri?, Ur
             ClientInstance.getOrLoadImage(song.album, context)
         }
     }
+    var deleting by remember { mutableStateOf(false) }
 
     Card {
         ExpandableContent(
@@ -111,11 +120,23 @@ fun Section(name: String, folderLauncher: ManagedActivityResultLauncher<Uri?, Ur
                 }
                 Text(text = name, style = MaterialTheme.typography.h4)
 
-                IconButton(onClick = {
-                    selectedSection = name
-                    folderLauncher.launch(null)
-                }) {
-                    Icon(imageVector = Icons.Filled.Sync, contentDescription = "Sync")
+
+                Spacer(modifier = Modifier.weight(1.0f))
+
+                Column(
+                    verticalArrangement = Arrangement.SpaceBetween
+                ) {
+                    IconButton(onClick = {
+                        selectedSection = name
+                        folderLauncher.launch(null)
+                    }) {
+                        Icon(imageVector = Icons.Filled.Sync, contentDescription = "Sync")
+                    }
+                    IconButton(onClick = {
+                        deleting = true
+                    }) {
+                        Icon(imageVector = Icons.Filled.Delete, contentDescription = "Delete")
+                    }
                 }
 
             }) {
@@ -125,17 +146,41 @@ fun Section(name: String, folderLauncher: ManagedActivityResultLauncher<Uri?, Ur
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 ClientInstance.songs[name]?.forEach {
-                    Song(it)
+                    Song(name, it, scope)
                 }
             }
         }
     }
+
+    if (deleting) {
+        AlertDialog(
+            onDismissRequest = { deleting = false },
+            title = { Text("Delete section $name?") },
+            confirmButton = {
+                Button(onClick = {
+                    deleting = false
+                    scope.launch {
+                        ClientInstance.client!!.deleteSection<Any?>(name)
+                        ClientInstance.refreshSectionsAndSongs()
+                    }
+                }) {
+                    Text(text = "Confirm")
+                }
+            },
+            dismissButton = {
+                Button(onClick = { deleting = false }) {
+                    Text(text = "Cancel")
+                }
+            }
+        )
+    }
 }
 
 @Composable
-fun Song(song: Song) {
+fun Song(section: String, song: Song, scope: CoroutineScope) {
     val context = LocalContext.current
     val image by remember { ClientInstance.getOrLoadImage(song.album, context) }
+    var deleting by remember { mutableStateOf(false) }
 
     Surface {
         Column(
@@ -154,8 +199,42 @@ fun Song(song: Song) {
                         contentDescription = song.name
                     )
                 }
-                Text(text = song.name, style = MaterialTheme.typography.h5)
+                Text(text = "${song.album} - ${song.name}", style = MaterialTheme.typography.h5)
+
+                Spacer(modifier = Modifier.weight(1.0f))
+
+                IconButton(onClick = {
+                    deleting = true
+                }) {
+                    Icon(imageVector = Icons.Filled.Delete, contentDescription = "Delete")
+                }
             }
         }
+    }
+    if (deleting) {
+        AlertDialog(
+            onDismissRequest = { deleting = false },
+            title = { Text("Delete song ${song.album} - ${song.name}?") },
+            confirmButton = {
+                Button(onClick = {
+                    deleting = false
+                    scope.launch {
+                        ClientInstance.client!!.deleteSong<Any?>(
+                            song.name,
+                            section,
+                            song.album
+                        )
+                        ClientInstance.refreshSectionsAndSongs()
+                    }
+                }) {
+                    Text(text = "Confirm")
+                }
+            },
+            dismissButton = {
+                Button(onClick = { deleting = false }) {
+                    Text(text = "Cancel")
+                }
+            }
+        )
     }
 }
