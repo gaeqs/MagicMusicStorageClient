@@ -54,12 +54,10 @@ fun Context.createAlbumImageFile(album: String, bitmap: ImageBitmap) {
     }
 
     val albumFile = File(albumsDirectory, "$album.png")
-    if (albumFile.exists()) {
-        error("Image already exist!")
-    }
-
-    if (!albumFile.createNewFile()) {
-        error("Cannot create file!")
+    if (!albumFile.exists()) {
+        if (!albumFile.createNewFile()) {
+            error("Cannot create file!")
+        }
     }
 
     val os = albumFile.outputStream()

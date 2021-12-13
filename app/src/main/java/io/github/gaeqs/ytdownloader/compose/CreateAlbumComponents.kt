@@ -1,10 +1,7 @@
 package io.github.gaeqs.ytdownloader.compose
 
 import android.content.Context
-import android.graphics.ImageDecoder
 import android.net.Uri
-import android.os.Build
-import android.provider.MediaStore
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -18,11 +15,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import io.github.gaeqs.ytdownloader.client.ClientInstance
+import io.github.gaeqs.ytdownloader.client.ImageCache
 import io.github.gaeqs.ytdownloader.client.postAlbum
 import io.github.gaeqs.ytdownloader.util.bitmapFromUri
 import io.ktor.client.features.*
@@ -78,6 +75,7 @@ fun CreateAlbumDialog(
                             onFinished = {
                                 confirmEnabled = true
                                 if (it) {
+                                    ImageCache.forceRefresh(name.trim(), context )
                                     scope.launch { ClientInstance.refreshAlbums() }
                                     onDismissRequest()
                                 }

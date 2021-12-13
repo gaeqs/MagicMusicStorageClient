@@ -34,6 +34,13 @@ object ImageCache {
         return state
     }
 
+    fun forceRefresh(album: String, context: Context) {
+        images[album]?.let {
+            it.value = null
+            refreshSong(album, it, context)
+        }
+    }
+
     fun refreshSong(album: String, state: MutableState<ImageBitmap?>, context: Context) {
         if (album in refreshingStates) return
         refreshingStates += album
