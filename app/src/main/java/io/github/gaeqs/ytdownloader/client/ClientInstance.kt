@@ -17,6 +17,7 @@ import kotlinx.coroutines.*
 object ClientInstance {
 
     private val ioScope = CoroutineScope(Dispatchers.IO)
+    private val uiScope = CoroutineScope(Dispatchers.Main)
 
     var client: ClientWrapper? = null
     var status: DownloadTaskStatusInformer? = null
@@ -105,7 +106,7 @@ object ClientInstance {
         ioScope.launch {
             val imageFromFile = context.getImageFile(album)
             if (imageFromFile != null) {
-                state.value = imageFromFile
+                uiScope.launch { state.value = imageFromFile }
                 return@launch
             }
 
@@ -116,7 +117,7 @@ object ClientInstance {
 
             context.createAlbumImageFile(album, image)
 
-            state.value = image
+            uiScope.launch { state.value = imageFromFile }
         }
 
         return state

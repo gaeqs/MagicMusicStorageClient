@@ -18,6 +18,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.work.WorkManager
 import io.github.gaeqs.ytdownloader.client.ClientInstance
+import io.github.gaeqs.ytdownloader.compose.AlbumsScaffold
 import io.github.gaeqs.ytdownloader.compose.MainScaffold
 import io.github.gaeqs.ytdownloader.compose.SectionsScaffold
 import io.github.gaeqs.ytdownloader.compose.StatusScaffold
@@ -64,6 +65,7 @@ class MainActivity : AppCompatActivity() {
                         composable("login") { Login(nav) }
                         composable("main") { MainScaffold(nav) }
                         composable("sections") { SectionsScaffold(nav) }
+                        composable("albums") { AlbumsScaffold(nav) }
                         composable("status") { StatusScaffold(nav) }
                     }
                 }

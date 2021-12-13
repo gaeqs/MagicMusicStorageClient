@@ -16,7 +16,6 @@ import androidx.compose.material.icons.filled.Sync
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
@@ -26,27 +25,26 @@ import androidx.work.workDataOf
 import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 import io.github.gaeqs.ytdownloader.client.ClientInstance
-import io.github.gaeqs.ytdownloader.client.Song
+import io.github.gaeqs.ytdownloader.client.deleteAlbum
 import io.github.gaeqs.ytdownloader.client.deleteSection
-import io.github.gaeqs.ytdownloader.client.deleteSong
 import io.github.gaeqs.ytdownloader.work.SyncWorker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
-private var selectedSection: String = ""
+private var selectedAlbum: String = ""
 
 @Composable
-fun SectionsScaffold(nav: NavController) {
+fun AlbumsScaffold(nav: NavController) {
     Scaffold(
-        topBar = { TopAppBar(title = { Text(text = "Sections") }) },
+        topBar = { TopAppBar(title = { Text(text = "Albums") }) },
         bottomBar = { MainNav(nav) }
     ) {
-        SectionsList(nav)
+        AlbumsList(nav)
     }
 }
 
 @Composable
-fun SectionsList(nav: NavController) {
+fun AlbumsList(nav: NavController) {
     val state = rememberSwipeRefreshState(false)
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -55,7 +53,7 @@ fun SectionsList(nav: NavController) {
         ActivityResultContracts.OpenDocumentTree()
     ) { uri ->
         val request = OneTimeWorkRequestBuilder<SyncWorker>()
-            .setInputData(workDataOf("folder" to uri.toString(), "section" to selectedSection))
+            .setInputData(workDataOf("folder" to uri.toString(), "album" to selectedAlbum))
             .build()
         WorkManager.getInstance(context).enqueue(request)
     }
@@ -66,7 +64,7 @@ fun SectionsList(nav: NavController) {
             scope.launch {
                 state.isRefreshing = true
                 try {
-                    ClientInstance.refreshSectionsAndSongs()
+                    ClientInstance.refreshAlbums()
                 } catch (ex: Exception) {
                     Toast.makeText(context, ex.message, Toast.LENGTH_SHORT).show()
                     nav.navigate("login")
@@ -80,28 +78,21 @@ fun SectionsList(nav: NavController) {
                 .fillMaxSize()
                 .padding(8.dp, 8.dp, 8.dp, 64.dp)
         ) {
-            items(ClientInstance.sections.sortedBy { it.lowercase() }) { name ->
-                Section(name = name, folderLauncher = folderLauncher, scope = scope)
+            items(ClientInstance.albums.sortedBy { it.lowercase() }) { name ->
+                Album(name = name, folderLauncher = folderLauncher, scope = scope)
             }
         }
     }
 }
 
 @Composable
-fun Section(
+fun Album(
     name: String,
     folderLauncher: ManagedActivityResultLauncher<Uri?, Uri?>,
     scope: CoroutineScope
 ) {
     val context = LocalContext.current
-    val image by remember {
-        val song = ClientInstance.songs[name]?.firstOrNull()
-        if (song == null) {
-            mutableStateOf<ImageBitmap?>(null)
-        } else {
-            ClientInstance.getOrLoadImage(song.album, context)
-        }
-    }
+    val image by remember { ClientInstance.getOrLoadImage(name, context) }
     var deleting by remember { mutableStateOf(false) }
 
     Card {
@@ -114,14 +105,15 @@ fun Section(
                 if (image != null) {
                     Image(
                         modifier = Modifier
-                            .padding(top = 4.dp, end = 16.dp)
-                            .weight(0.3f),
+                            .weight(0.3f)
+                            .padding(top = 4.dp, end = 16.dp),
                         bitmap = image!!,
                         contentDescription = name
                     )
                 } else {
                     Spacer(modifier = Modifier.weight(0.3f))
                 }
+
                 Text(
                     modifier = Modifier.weight(0.5f),
                     text = name,
@@ -130,13 +122,11 @@ fun Section(
 
 
                 Column(
-                    modifier = Modifier
-                        .weight(0.2f)
-                        .padding(end = 8.dp),
+                    modifier = Modifier.weight(0.2f),
                     verticalArrangement = Arrangement.SpaceBetween
                 ) {
                     IconButton(onClick = {
-                        selectedSection = name
+                        selectedAlbum = name
                         folderLauncher.launch(null)
                     }) {
                         Icon(imageVector = Icons.Filled.Sync, contentDescription = "Sync")
@@ -154,91 +144,25 @@ fun Section(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                ClientInstance.songs[name]?.forEach {
-                    Song(name, it, scope)
-                }
-            }
-        }
-    }
-
-    if (deleting) {
-        AlertDialog(
-            onDismissRequest = { deleting = false },
-            title = { Text("Delete section $name?") },
-            confirmButton = {
-                Button(onClick = {
-                    deleting = false
-                    scope.launch {
-                        ClientInstance.client!!.deleteSection<Any?>(name)
-                        ClientInstance.refreshSectionsAndSongs()
+                ClientInstance.songs.entries.forEach { (section, songs) ->
+                    songs.filter { it.album == name }.forEach {
+                        Song(section = section, song = it, scope = scope)
                     }
-                }) {
-                    Text(text = "Confirm")
-                }
-            },
-            dismissButton = {
-                Button(onClick = { deleting = false }) {
-                    Text(text = "Cancel")
-                }
-            }
-        )
-    }
-}
-
-@Composable
-fun Song(section: String, song: Song, scope: CoroutineScope) {
-    val context = LocalContext.current
-    val image by remember { ClientInstance.getOrLoadImage(song.album, context) }
-    var deleting by remember { mutableStateOf(false) }
-
-    Surface {
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Row(
-                modifier = Modifier
-                    .height(64.dp)
-                    .fillMaxWidth()
-            ) {
-                if (image != null) {
-                    Image(
-                        modifier = Modifier.padding(end = 16.dp).weight(0.3f),
-                        bitmap = image!!,
-                        contentDescription = song.name
-                    )
-                } else {
-                    Spacer(modifier = Modifier.weight(0.3f))
-                }
-                Text(
-                    modifier = Modifier.weight(0.5f),
-                    text = "${song.album} - ${song.name}",
-                    style = MaterialTheme.typography.h5
-                )
-
-                IconButton(
-                    modifier = Modifier.weight(0.2f),
-                    onClick = {
-                    deleting = true
-                }) {
-                    Icon(imageVector = Icons.Filled.Delete, contentDescription = "Delete")
                 }
             }
         }
     }
+
     if (deleting) {
         AlertDialog(
             onDismissRequest = { deleting = false },
-            title = { Text("Delete song ${song.album} - ${song.name}?") },
+            title = { Text("Delete album $name?") },
             confirmButton = {
                 Button(onClick = {
                     deleting = false
                     scope.launch {
-                        ClientInstance.client!!.deleteSong<Any?>(
-                            song.name,
-                            section,
-                            song.album
-                        )
+                        ClientInstance.client!!.deleteAlbum<Any?>(name)
+                        ClientInstance.refreshAlbums()
                         ClientInstance.refreshSectionsAndSongs()
                     }
                 }) {

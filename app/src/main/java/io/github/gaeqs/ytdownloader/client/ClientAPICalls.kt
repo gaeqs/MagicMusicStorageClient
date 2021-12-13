@@ -227,3 +227,17 @@ suspend inline fun <reified T> ClientWrapper.deleteSection(
         onResponseException(ex)
     }
 }
+
+suspend inline fun <reified T> ClientWrapper.deleteAlbum(
+    section: String,
+    onResponseException: (Exception) -> T = { ex -> throw ex }
+): T {
+    return try {
+        apiClient.post(host = host, port = port, path = "/api/post/deleteAlbum") {
+            contentType(ContentType.Application.Json)
+            body = SectionWrapper(section)
+        }
+    } catch (ex: Exception) {
+        onResponseException(ex)
+    }
+}
