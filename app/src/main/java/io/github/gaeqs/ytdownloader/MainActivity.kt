@@ -1,5 +1,8 @@
 package io.github.gaeqs.ytdownloader
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
@@ -13,6 +16,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.work.WorkManager
 import io.github.gaeqs.ytdownloader.client.ClientInstance
 import io.github.gaeqs.ytdownloader.compose.MainScaffold
 import io.github.gaeqs.ytdownloader.compose.SectionsScaffold
@@ -30,6 +34,17 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         PreferencesManager.init(application)
+
+        createNotificationChannel()
+
+        val manager = WorkManager.getInstance(this)
+        val liveData = manager.getWorkInfosByTagLiveData("sync")
+        liveData.observe(this) {
+            println("LIST")
+            println(it.size)
+            println(it)
+            println("AAAAAAAAAAA")
+        }
 
         setContent {
             nav = rememberNavController()
@@ -76,5 +91,18 @@ class MainActivity : AppCompatActivity() {
         val host = PreferencesManager.host ?: return false
         val port = PreferencesManager.port ?: return false
         return ClientInstance.tryConnect(user, password, host, port).first
+    }
+
+    private fun createNotificationChannel() {
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                "yt_dl_sync",
+                "Sync",
+                NotificationManager.IMPORTANCE_DEFAULT
+            )
+            channel.description = "Sync notifications"
+            val manager = getSystemService(NotificationManager::class.java)
+            manager.createNotificationChannel(channel)
+        }
     }
 }

@@ -19,9 +19,9 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import androidx.work.Data
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
+import androidx.work.workDataOf
 import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 import io.github.gaeqs.ytdownloader.client.ClientInstance
@@ -50,13 +50,10 @@ fun SectionsList(nav: NavController) {
     val folderLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenDocumentTree()
     ) { uri ->
-        println("DOWN")
         val request = OneTimeWorkRequestBuilder<SyncWorker>()
-        val dataBuilder = Data.Builder()
-        dataBuilder.putString("folder", uri.toString())
-        dataBuilder.putString("section", selectedSection)
-        request.setInputData(dataBuilder.build())
-        WorkManager.getInstance(context).enqueue(request.build())
+            .setInputData(workDataOf("folder" to uri.toString(), "section" to selectedSection))
+            .build()
+        WorkManager.getInstance(context).enqueue(request)
     }
 
     SwipeRefresh(
