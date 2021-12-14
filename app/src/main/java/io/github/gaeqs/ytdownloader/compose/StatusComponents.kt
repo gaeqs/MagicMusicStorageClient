@@ -29,7 +29,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun StatusScaffold(nav: NavController) {
     Scaffold(
-        topBar = { TopAppBar(title = { Text(text = "Status") }) },
+        topBar = { TopAppBar(title = { Text(text = "Status") }, actions = { LogoutAction(nav) }) },
         bottomBar = { MainNav(nav) }
     ) {
         ClientInstance.checkStatusInformer()
@@ -80,9 +80,14 @@ fun Status(status: TaskStatus, scope: CoroutineScope, nav: NavController) {
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
 
+                var name =  "${status.request.album} - ${status.request.name}"
+                if(name.length > 35) {
+                    name = name.substring(0, 32) + "..."
+                }
+
                 Text(
-                    text = "${status.request.album} - ${status.request.name}",
-                    style = MaterialTheme.typography.h5
+                    text = name,
+                    style = MaterialTheme.typography.h6
                 )
 
                 Text(

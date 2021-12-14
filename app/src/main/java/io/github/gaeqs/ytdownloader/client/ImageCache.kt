@@ -46,8 +46,10 @@ object ImageCache {
         if (album in refreshingStates) return
         refreshingStates += album
 
+        val user = ClientInstance.client!!.loginInfo!!.username
+
         ClientInstance.ioScope.launch {
-            val imageFromFile = context.getAlbumImageFile(album)
+            val imageFromFile = context.getAlbumImageFile(user, album)
             if (imageFromFile != null) {
                 val date: Long = ClientInstance.client!!.getAlbumCoverModificationDate(album) {
                     ClientInstance.uiScope.launch { refreshingStates -= album }
@@ -69,7 +71,7 @@ object ImageCache {
             val bitmap = BitmapFactory.decodeByteArray(array, 0, array.size)
                 ?: return@launch
             val image = bitmap.asImageBitmap()
-            context.createAlbumImageFile(album, image)
+            context.createAlbumImageFile(user, album, image)
             ClientInstance.uiScope.launch {
                 refreshingStates -= album
                 state.value = image

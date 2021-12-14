@@ -14,6 +14,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -36,7 +37,7 @@ private var selectedAlbum: String = ""
 @Composable
 fun AlbumsScaffold(nav: NavController) {
     Scaffold(
-        topBar = { TopAppBar(title = { Text(text = "Albums") }) },
+        topBar = { TopAppBar(title = { Text(text = "Albums") }, actions = { LogoutAction(nav) }) },
         bottomBar = { MainNav(nav) }
     ) {
         AlbumsList(nav)
@@ -74,53 +75,76 @@ fun AlbumsList(nav: NavController) {
             }
         }) {
 
-        val items = mutableListOf<Any>()
-        var expandedElements by remember { mutableStateOf(setOf<String>()) }
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(8.dp, 8.dp, 8.dp, 64.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
 
-        val songs = TreeSet<SectionSong> { o1, o2 ->
-            val i = o1.song.album.compareTo(o2.song.album)
-            if (i == 0) {
-                return@TreeSet o1.song.name.compareTo(o2.song.name)
+            var search by rememberSaveable { mutableStateOf("") }
+            val searchLower = search.lowercase().trim()
+
+            val items = mutableListOf<Any>()
+            var expandedElements by remember { mutableStateOf(setOf<String>()) }
+
+            val songs = TreeSet<SectionSong> { o1, o2 ->
+                val i = o1.song.album.compareTo(o2.song.album)
+                if (i == 0) {
+                    return@TreeSet o1.song.name.compareTo(o2.song.name)
+                }
+                return@TreeSet i
             }
-            return@TreeSet i
-        }
 
-        ClientInstance.albums.sortedBy { it.lowercase() }.forEach { album ->
-            items += album
-            if (album in expandedElements) {
+            ClientInstance.albums.sortedBy { it.lowercase() }.forEach { album ->
+
                 songs.clear()
                 ClientInstance.songs.entries.forEach { (section, list) ->
-                    list.filter { it.album == album }.forEach {
+                    list.filter {
+                        it.album == album &&
+                                (it.album.lowercase().startsWith(searchLower)
+                                        || it.name.lowercase().startsWith(searchLower))
+                    }.forEach {
                         songs += SectionSong(section, it)
                     }
                 }
-                items.addAll(songs)
-            }
-        }
 
-        LazyColumn(
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(8.dp, 8.dp, 8.dp, 64.dp)
-        ) {
-            items(items) { element ->
-                if (element is String) {
-                    Album(visible = element in expandedElements, name = element,
-                        folderLauncher = folderLauncher, scope = scope,
-                        onVisible = {
-                            expandedElements = if (it) {
-                                expandedElements + element
-                            } else {
-                                expandedElements - element
-                            }
-                        })
-                } else if (element is SectionSong) {
-                    Song(element.section, element.song, scope)
+                if (songs.isEmpty() && searchLower.isNotEmpty()) return@forEach
+
+                items += album
+                if (album in expandedElements) {
+                    items.addAll(songs)
+                }
+            }
+
+
+            TextField(
+                modifier = Modifier.fillMaxWidth(1.0f),
+                label = { Text(text = "Filter") },
+                value = search,
+                onValueChange = { search = it }
+            )
+
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                items(items) { element ->
+                    if (element is String) {
+                        Album(visible = element in expandedElements, name = element,
+                            folderLauncher = folderLauncher, scope = scope,
+                            onVisible = {
+                                expandedElements = if (it) {
+                                    expandedElements + element
+                                } else {
+                                    expandedElements - element
+                                }
+                            })
+                    } else if (element is SectionSong) {
+                        Song(element.section, element.song, scope)
+                    }
                 }
             }
         }
-
 
     }
 }
@@ -161,7 +185,7 @@ fun Album(
                 Text(
                     modifier = Modifier.weight(0.525f),
                     text = name,
-                    style = MaterialTheme.typography.h4
+                    style = MaterialTheme.typography.h5
                 )
 
 

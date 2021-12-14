@@ -14,6 +14,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -36,7 +37,11 @@ private var selectedSection: String = ""
 @Composable
 fun SectionsScaffold(nav: NavController) {
     Scaffold(
-        topBar = { TopAppBar(title = { Text(text = "Sections") }) },
+        topBar = {
+            TopAppBar(
+                title = { Text(text = "Sections") },
+                actions = { LogoutAction(nav) })
+        },
         bottomBar = { MainNav(nav) }
     ) {
         SectionsList(nav)
@@ -74,37 +79,58 @@ fun SectionsList(nav: NavController) {
             }
         }) {
 
-
-        val items = mutableListOf<Any>()
-        var expandedElements by remember { mutableStateOf(setOf<String>()) }
-        ClientInstance.sections.sortedBy { it.lowercase() }.forEach {
-            items += it
-            if (it in expandedElements) {
-                ClientInstance.songs[it]
-                    ?.sortedBy { s -> s.album + " - " + s.name }
-                    ?.forEach { s -> items += SectionSong(it, s) }
-            }
-        }
-
-        LazyColumn(
-            verticalArrangement = Arrangement.spacedBy(4.dp),
+        Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(8.dp, 8.dp, 8.dp, 64.dp)
+                .padding(8.dp, 8.dp, 8.dp, 64.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            items(items) { element ->
-                if (element is String) {
-                    Section(visible = element in expandedElements, name = element,
-                        folderLauncher = folderLauncher, scope = scope,
-                        onVisible = {
-                            expandedElements = if (it) {
-                                expandedElements + element
-                            } else {
-                                expandedElements - element
-                            }
-                        })
-                } else if (element is SectionSong) {
-                    Song(element.section, element.song, scope)
+
+            var search by rememberSaveable { mutableStateOf("") }
+            val searchLower = search.lowercase().trim()
+
+            val items = mutableListOf<Any>()
+            var expandedElements by remember { mutableStateOf(setOf<String>()) }
+            ClientInstance.sections.sortedBy { it.lowercase() }.forEach {
+
+                val songs = ClientInstance.songs[it]
+                    ?.filter { s ->
+                        s.album.lowercase().startsWith(searchLower)
+                                || s.name.lowercase().startsWith(searchLower)
+                    }?.toSortedSet(compareBy { s -> s.album + " - " + s.name }) ?: emptyList()
+
+                if (songs.isEmpty() && searchLower.isNotEmpty()) return@forEach
+
+                items += it
+                if (it in expandedElements) {
+                    songs.forEach { s -> items += SectionSong(it, s) }
+                }
+            }
+
+            TextField(
+                modifier = Modifier.fillMaxWidth(1.0f),
+                label = { Text(text = "Filter") },
+                value = search,
+                onValueChange = { search = it }
+            )
+
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                items(items) { element ->
+                    if (element is String) {
+                        Section(visible = element in expandedElements, name = element,
+                            folderLauncher = folderLauncher, scope = scope,
+                            onVisible = {
+                                expandedElements = if (it) {
+                                    expandedElements + element
+                                } else {
+                                    expandedElements - element
+                                }
+                            })
+                    } else if (element is SectionSong) {
+                        Song(element.section, element.song, scope)
+                    }
                 }
             }
         }
@@ -152,7 +178,7 @@ fun Section(
                 Text(
                     modifier = Modifier.weight(0.525f),
                     text = name,
-                    style = MaterialTheme.typography.h4
+                    style = MaterialTheme.typography.h5
                 )
 
                 Column(

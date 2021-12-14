@@ -26,7 +26,11 @@ import kotlinx.coroutines.launch
 @Composable
 fun MainScaffold(nav: NavController) {
     Scaffold(
-        topBar = { TopAppBar(title = { Text(text = "Download") }) },
+        topBar = {
+            TopAppBar(
+                title = { Text(text = "Download") },
+                actions = { LogoutAction(nav) })
+        },
         bottomBar = { MainNav(nav) }
     ) {
         Main(nav)

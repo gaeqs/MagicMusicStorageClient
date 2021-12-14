@@ -13,23 +13,23 @@ import androidx.compose.ui.graphics.asImageBitmap
 import java.io.File
 
 
-fun Context.getAlbumImageFile(album: String): File? {
+fun Context.getAlbumImageFile(username : String, album: String): File? {
     val directory = getExternalFilesDir(Environment.DIRECTORY_PICTURES)
     val albumsDirectory = File(directory, "albums")
     if (!albumsDirectory.exists()) return null
 
-    val albumFile = File(albumsDirectory, "$album.png")
+    val albumFile = File(albumsDirectory, "$username-$album.png")
     if (!albumFile.exists()) return null
     return albumFile
 }
 
 
-fun Context.getImageForAlbum(album: String): ImageBitmap? {
+fun Context.getImageForAlbum(username: String, album: String): ImageBitmap? {
     val directory = getExternalFilesDir(Environment.DIRECTORY_PICTURES)
     val albumsDirectory = File(directory, "albums")
     if (!albumsDirectory.exists()) return null
 
-    val albumFile = File(albumsDirectory, "$album.png")
+    val albumFile = File(albumsDirectory, "$username-$album.png")
     if (!albumFile.exists()) return null
 
     val imageUri = Uri.fromFile(albumFile)
@@ -46,14 +46,14 @@ fun Context.bitmapFromUri(uri: Uri): ImageBitmap {
     }.asImageBitmap()
 }
 
-fun Context.createAlbumImageFile(album: String, bitmap: ImageBitmap) {
+fun Context.createAlbumImageFile(username: String, album: String, bitmap: ImageBitmap) {
     val directory = getExternalFilesDir(Environment.DIRECTORY_PICTURES)
     val albumsDirectory = File(directory, "albums")
     if (!albumsDirectory.exists()) {
         albumsDirectory.mkdirs()
     }
 
-    val albumFile = File(albumsDirectory, "$album.png")
+    val albumFile = File(albumsDirectory, "$username-$album.png")
     if (!albumFile.exists()) {
         if (!albumFile.createNewFile()) {
             error("Cannot create file!")
