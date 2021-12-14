@@ -69,7 +69,11 @@ fun AlbumsList(nav: NavController) {
                     ClientInstance.refreshSectionsAndSongs()
                 } catch (ex: Exception) {
                     Toast.makeText(context, ex.message, Toast.LENGTH_SHORT).show()
-                    nav.navigate("login")
+                    nav.navigate("login") {
+                        popUpTo(0) {
+                            inclusive = true
+                        }
+                    }
                 }
                 state.isRefreshing = false
             }

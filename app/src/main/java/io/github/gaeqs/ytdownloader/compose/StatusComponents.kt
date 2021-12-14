@@ -80,8 +80,8 @@ fun Status(status: TaskStatus, scope: CoroutineScope, nav: NavController) {
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
 
-                var name =  "${status.request.album} - ${status.request.name}"
-                if(name.length > 35) {
+                var name = "${status.request.album} - ${status.request.name}"
+                if (name.length > 35) {
                     name = name.substring(0, 32) + "..."
                 }
 
@@ -146,14 +146,22 @@ private suspend fun cancelRequest(status: TaskStatus, nav: NavController, contex
     ) {
         if (it is ClientRequestException) {
             when (it.response.status) {
-                HttpStatusCode.Unauthorized -> nav.navigate("login")
+                HttpStatusCode.Unauthorized -> nav.navigate("login") {
+                    popUpTo(0) {
+                        inclusive = true
+                    }
+                }
                 else -> Toast.makeText(context, it.response.status.toString(), Toast.LENGTH_SHORT)
                     .show()
             }
         } else {
             it.printStackTrace()
             Toast.makeText(context, it.message, Toast.LENGTH_SHORT).show()
-            nav.navigate("login")
+            nav.navigate("login") {
+                popUpTo(0) {
+                    inclusive = true
+                }
+            }
         }
     }
 }
@@ -162,13 +170,21 @@ private suspend fun restartRequest(status: TaskStatus, nav: NavController, conte
     ClientInstance.client!!.postRequest(status.request) {
         if (it is ClientRequestException) {
             when (it.response.status) {
-                HttpStatusCode.Unauthorized -> nav.navigate("login")
+                HttpStatusCode.Unauthorized -> nav.navigate("login") {
+                    popUpTo(0) {
+                        inclusive = true
+                    }
+                }
                 else -> Toast.makeText(context, it.response.readText(), Toast.LENGTH_SHORT).show()
             }
         } else {
             it.printStackTrace()
             Toast.makeText(context, it.message, Toast.LENGTH_SHORT).show()
-            nav.navigate("login")
+            nav.navigate("login") {
+                popUpTo(0) {
+                    inclusive = true
+                }
+            }
         }
     }
 }

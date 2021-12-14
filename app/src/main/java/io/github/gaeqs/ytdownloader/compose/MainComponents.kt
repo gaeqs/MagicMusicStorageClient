@@ -183,13 +183,21 @@ fun Main(nav: NavController) {
                     ClientInstance.client!!.postRequest(request) {
                         if (it is ClientRequestException) {
                             when (it.response.status) {
-                                HttpStatusCode.Unauthorized -> nav.navigate("login")
+                                HttpStatusCode.Unauthorized -> nav.navigate("login") {
+                                    popUpTo(0) {
+                                        inclusive = true
+                                    }
+                                }
                                 else -> errorMessage = it.response.readText()
                             }
                         } else {
                             it.printStackTrace()
                             Toast.makeText(context, it.message, Toast.LENGTH_SHORT).show()
-                            nav.navigate("login")
+                            nav.navigate("login") {
+                                popUpTo(0) {
+                                    inclusive = true
+                                }
+                            }
                         }
                     }
                 }

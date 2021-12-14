@@ -10,7 +10,11 @@ import io.github.gaeqs.ytdownloader.client.ClientInstance
 fun LogoutAction(nav: NavController) {
     TextButton(onClick = {
         ClientInstance.disconnect()
-        nav.navigate("login")
+        nav.navigate("login") {
+            popUpTo(0) {
+                inclusive = true
+            }
+        }
     }) {
         Text(text = "Logout")
     }

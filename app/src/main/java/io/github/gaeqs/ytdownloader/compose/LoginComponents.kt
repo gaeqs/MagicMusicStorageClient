@@ -68,7 +68,11 @@ fun Login(nav: NavController) {
             onError = { error = it }
         ) {
             PreferencesManager.setLoginData(user, password, host, port)
-            nav.navigate("main")
+            nav.navigate("main") {
+                popUpTo(0) {
+                    inclusive = true
+                }
+            }
         }
     }
 }

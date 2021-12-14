@@ -75,7 +75,7 @@ fun CreateAlbumDialog(
                             onFinished = {
                                 confirmEnabled = true
                                 if (it) {
-                                    ImageCache.forceRefresh(name.trim(), context )
+                                    ImageCache.forceRefresh(name.trim(), context)
                                     scope.launch { ClientInstance.refreshAlbums() }
                                     onDismissRequest()
                                 }
@@ -144,13 +144,21 @@ private fun sendAlbum(
     ClientInstance.client!!.postAlbum(context, album, image) {
         if (it is ClientRequestException) {
             when (it.response.status) {
-                HttpStatusCode.Unauthorized -> nav.navigate("login")
+                HttpStatusCode.Unauthorized -> nav.navigate("login") {
+                    popUpTo(0) {
+                        inclusive = true
+                    }
+                }
                 else -> Toast.makeText(context, it.response.readText(), Toast.LENGTH_SHORT).show()
             }
         } else {
             it.printStackTrace()
             Toast.makeText(context, it.message, Toast.LENGTH_SHORT).show()
-            nav.navigate("login")
+            nav.navigate("login") {
+                popUpTo(0) {
+                    inclusive = true
+                }
+            }
         }
         result = false
     }
