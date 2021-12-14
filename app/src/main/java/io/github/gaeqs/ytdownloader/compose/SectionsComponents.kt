@@ -29,6 +29,8 @@ import io.github.gaeqs.ytdownloader.work.SyncWorker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
+class SectionSong(val section: String, val song: Song)
+
 private var selectedSection: String = ""
 
 @Composable
@@ -71,14 +73,39 @@ fun SectionsList(nav: NavController) {
                 state.isRefreshing = false
             }
         }) {
+
+
+        val items = mutableListOf<Any>()
+        var expandedElements by remember { mutableStateOf(setOf<String>()) }
+        ClientInstance.sections.sortedBy { it.lowercase() }.forEach {
+            items += it
+            if (it in expandedElements) {
+                ClientInstance.songs[it]
+                    ?.sortedBy { s -> s.album + " - " + s.name }
+                    ?.forEach { s -> items += SectionSong(it, s) }
+            }
+        }
+
         LazyColumn(
             verticalArrangement = Arrangement.spacedBy(4.dp),
             modifier = Modifier
                 .fillMaxSize()
                 .padding(8.dp, 8.dp, 8.dp, 64.dp)
         ) {
-            items(ClientInstance.sections.sortedBy { it.lowercase() }) { name ->
-                Section(name = name, folderLauncher = folderLauncher, scope = scope)
+            items(items) { element ->
+                if (element is String) {
+                    Section(visible = element in expandedElements, name = element,
+                        folderLauncher = folderLauncher, scope = scope,
+                        onVisible = {
+                            expandedElements = if (it) {
+                                expandedElements + element
+                            } else {
+                                expandedElements - element
+                            }
+                        })
+                } else if (element is SectionSong) {
+                    Song(element.section, element.song, scope)
+                }
             }
         }
     }
@@ -86,9 +113,11 @@ fun SectionsList(nav: NavController) {
 
 @Composable
 fun Section(
+    visible: Boolean,
     name: String,
     folderLauncher: ManagedActivityResultLauncher<Uri?, Uri?>,
-    scope: CoroutineScope
+    scope: CoroutineScope,
+    onVisible: (Boolean) -> Unit = {},
 ) {
     val context = LocalContext.current
     val song = ClientInstance.songs[name]?.firstOrNull()
@@ -100,11 +129,13 @@ fun Section(
     var deleting by remember { mutableStateOf(false) }
 
     Card {
-        ExpandableContent(
+        SimpleExpandableContent(
+            visible = visible,
             title = name,
             modifier = Modifier.fillMaxWidth(),
             rowModifier = Modifier.height(128.dp),
             width = 1.0f,
+            onVisible = onVisible,
             rowScope = {
                 if (image != null) {
                     Image(
@@ -143,17 +174,7 @@ fun Section(
                     }
                 }
 
-            }) {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                ClientInstance.songs[name]?.forEach {
-                    Song(name, it, scope)
-                }
-            }
-        }
+            })
     }
 
     if (deleting) {

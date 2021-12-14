@@ -97,6 +97,46 @@ fun ExpandableContent(
     }
 }
 
+@OptIn(ExperimentalAnimationApi::class)
+@Composable
+fun SimpleExpandableContent(
+    visible: Boolean,
+    title: String,
+    modifier: Modifier = Modifier,
+    rowModifier: Modifier = Modifier,
+    width: Float = 0.8f,
+    onVisible: (Boolean) -> Unit = {},
+    rowScope: @Composable RowScope.() -> Unit = {
+        Text(text = title, style = MaterialTheme.typography.h6)
+    },
+) {
+    Column(modifier = modifier.fillMaxWidth(width)) {
+        Row(
+            rowModifier
+                .fillMaxWidth()
+                .padding(bottom = 8.dp)
+                .clickable { onVisible(!visible) },
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (visible) {
+                Icon(
+                    imageVector = Icons.Default.ExpandLess,
+                    tint = MaterialTheme.colors.onBackground,
+                    contentDescription = "Collapse"
+                )
+            } else {
+                Icon(
+                    imageVector = Icons.Default.ExpandMore,
+                    tint = MaterialTheme.colors.onBackground,
+                    contentDescription = "Expand",
+                )
+            }
+            rowScope()
+        }
+    }
+}
+
+
 @Composable
 fun MainNav(nav: NavController) {
     BottomAppBar {
@@ -166,9 +206,9 @@ fun DropDownMenu(
             elements.forEach { label ->
                 DropdownMenuItem(
                     onClick = {
-                    onSelectElement(label)
-                    onExpand(false)
-                }) {
+                        onSelectElement(label)
+                        onExpand(false)
+                    }) {
                     itemBuilder(label)
                 }
             }

@@ -14,7 +14,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -27,10 +26,10 @@ import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 import io.github.gaeqs.ytdownloader.client.ClientInstance
 import io.github.gaeqs.ytdownloader.client.ImageCache
 import io.github.gaeqs.ytdownloader.client.deleteAlbum
-import io.github.gaeqs.ytdownloader.client.deleteSection
 import io.github.gaeqs.ytdownloader.work.SyncWorker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import java.util.*
 
 private var selectedAlbum: String = ""
 
@@ -74,35 +73,78 @@ fun AlbumsList(nav: NavController) {
                 state.isRefreshing = false
             }
         }) {
+
+        val items = mutableListOf<Any>()
+        var expandedElements by remember { mutableStateOf(setOf<String>()) }
+
+        val songs = TreeSet<SectionSong> { o1, o2 ->
+            val i = o1.song.album.compareTo(o2.song.album)
+            if (i == 0) {
+                return@TreeSet o1.song.name.compareTo(o2.song.name)
+            }
+            return@TreeSet i
+        }
+
+        ClientInstance.albums.sortedBy { it.lowercase() }.forEach { album ->
+            items += album
+            if (album in expandedElements) {
+                songs.clear()
+                ClientInstance.songs.entries.forEach { (section, list) ->
+                    list.filter { it.album == album }.forEach {
+                        songs += SectionSong(section, it)
+                    }
+                }
+                items.addAll(songs)
+            }
+        }
+
         LazyColumn(
             verticalArrangement = Arrangement.spacedBy(4.dp),
             modifier = Modifier
                 .fillMaxSize()
                 .padding(8.dp, 8.dp, 8.dp, 64.dp)
         ) {
-            items(ClientInstance.albums.sortedBy { it.lowercase() }) { name ->
-                Album(name = name, folderLauncher = folderLauncher, scope = scope)
+            items(items) { element ->
+                if (element is String) {
+                    Album(visible = element in expandedElements, name = element,
+                        folderLauncher = folderLauncher, scope = scope,
+                        onVisible = {
+                            expandedElements = if (it) {
+                                expandedElements + element
+                            } else {
+                                expandedElements - element
+                            }
+                        })
+                } else if (element is SectionSong) {
+                    Song(element.section, element.song, scope)
+                }
             }
         }
+
+
     }
 }
 
 @Composable
 fun Album(
+    visible: Boolean,
     name: String,
     folderLauncher: ManagedActivityResultLauncher<Uri?, Uri?>,
-    scope: CoroutineScope
+    scope: CoroutineScope,
+    onVisible: (Boolean) -> Unit = {},
 ) {
     val context = LocalContext.current
     val image by remember { ImageCache.getOrLoadImage(name, context) }
     var deleting by remember { mutableStateOf(false) }
 
     Card {
-        ExpandableContent(
+        SimpleExpandableContent(
+            visible = visible,
             title = name,
             modifier = Modifier.fillMaxWidth(),
             rowModifier = Modifier.height(128.dp),
             width = 1.0f,
+            onVisible = onVisible,
             rowScope = {
                 if (image != null) {
                     Image(
@@ -140,19 +182,7 @@ fun Album(
                     }
                 }
 
-            }) {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                ClientInstance.songs.entries.forEach { (section, songs) ->
-                    songs.filter { it.album == name }.forEach {
-                        Song(section = section, song = it, scope = scope)
-                    }
-                }
-            }
-        }
+            })
     }
 
     if (deleting) {
