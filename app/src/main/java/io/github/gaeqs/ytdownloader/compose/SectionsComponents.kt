@@ -148,12 +148,12 @@ fun Section(
                 } else {
                     Spacer(modifier = Modifier.weight(0.3f))
                 }
+
                 Text(
                     modifier = Modifier.weight(0.525f),
                     text = name,
                     style = MaterialTheme.typography.h4
                 )
-
 
                 Column(
                     modifier = Modifier
@@ -204,7 +204,7 @@ fun Section(
 @Composable
 fun Song(section: String, song: Song, scope: CoroutineScope) {
     val context = LocalContext.current
-    val image by remember { ImageCache.getOrLoadImage(song.album, context) }
+    val image by ImageCache.getOrLoadImage(song.album, context)
     var deleting by remember { mutableStateOf(false) }
 
     Surface {
@@ -214,7 +214,7 @@ fun Song(section: String, song: Song, scope: CoroutineScope) {
         ) {
             Row(
                 modifier = Modifier
-                    .height(64.dp)
+                    .height(96.dp)
                     .fillMaxWidth()
             ) {
                 if (image != null) {
@@ -231,7 +231,7 @@ fun Song(section: String, song: Song, scope: CoroutineScope) {
                 Text(
                     modifier = Modifier.weight(0.5f),
                     text = "${song.album} - ${song.name}",
-                    style = MaterialTheme.typography.h5
+                    style = MaterialTheme.typography.h6
                 )
 
                 IconButton(

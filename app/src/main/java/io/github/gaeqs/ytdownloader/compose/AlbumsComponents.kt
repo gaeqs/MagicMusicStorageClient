@@ -134,7 +134,7 @@ fun Album(
     onVisible: (Boolean) -> Unit = {},
 ) {
     val context = LocalContext.current
-    val image by remember { ImageCache.getOrLoadImage(name, context) }
+    val image by ImageCache.getOrLoadImage(name, context)
     var deleting by remember { mutableStateOf(false) }
 
     Card {
